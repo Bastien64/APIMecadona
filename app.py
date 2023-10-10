@@ -12,4 +12,4 @@ def convert():
         return jsonify({'success': True, 'message': 'Valid user'})
     return jsonify({'success': False, 'message': 'Invalid user'})
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    app.run()
