@@ -1,1 +1,1 @@
-web: gunicorn app:app > Procfile
+web: python run.py
