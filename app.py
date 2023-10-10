@@ -11,5 +11,3 @@ def convert():
     if(user['username'] == 'admin' and user['password'] == '1234'):
         return jsonify({'success': True, 'message': 'Valid user'})
     return jsonify({'success': False, 'message': 'Invalid user'})
-if __name__ == '__main__':
-    app.run()
