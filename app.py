@@ -20,7 +20,7 @@ app = Flask(__name__)
 port = int(os.environ.get('PORT', 5000))
 
 CORS(app, resources={r"/*": {"origins": "*"}})
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres@37.187.39.204/studi'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123456Azerty!@37.187.39.204/studi'
 
 db = SQLAlchemy(app)
 
