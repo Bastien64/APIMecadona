@@ -1,0 +1,148 @@
+from flask import Flask, request, jsonify
+from flask_mysqldb import MySQL
+from werkzeug.middleware.proxy_fix import ProxyFix
+import base64
+import bcrypt
+from flask_cors import CORS
+
+app = Flask(__name__)
+
+CORS(app, resources={r"/*": {"origins": "*"}})
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = '123456Azerty!'
+app.config['MYSQL_DB'] = 'mercadona'
+
+mysql = MySQL(app)
+
+
+
+@app.route('/admin', methods=['GET', 'POST'])
+def login_admin():
+    login = request.json.get('login')
+    password = request.json.get('password')
+    cur = mysql.connection.cursor()
+
+    # Utilisation de paramètres pour éviter l'injection SQL
+    cur.execute("SELECT * FROM admin WHERE login = %s", (login,))
+    admin = cur.fetchone()
+    cur.close()
+
+    if admin:
+        hashed_password = admin[2]
+        if bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8')):
+            admin_data = {
+                'id': admin[0],
+                'login': admin[1]
+            }
+            return jsonify(admin_data), 200
+        else:
+            return "Unauthorized", 401
+    else:
+        return "Unauthorized", 401
+
+
+@app.route('/admin/create', methods=['POST'])
+def create_admin():
+    login = request.json.get('login')
+    password = request.json.get('password')
+
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+    cur = mysql.connection.cursor()
+    
+    # Utilisation de paramètres pour éviter l'injection SQL
+    cur.execute("INSERT INTO admin (login, password) VALUES (%s, %s)", (login, hashed_password))
+    mysql.connection.commit()
+    cur.close()
+
+    return "Admin created successfully", 201
+
+@app.route('/produit', methods=['GET'])
+def get_produits():
+    cur = mysql.connection.cursor()
+    cur.execute('''SELECT * FROM produit''')
+    result = cur.fetchall()
+    produits = []
+    for produit in result:
+        produit_data = {}
+        produit_data['id'] = produit[0]
+        produit_data['description'] = produit[1]
+        produit_data['price'] = produit[2]
+        produit_data['image'] = base64.b64encode(produit[3]).decode('utf-8')
+        produit_data['categorie_id'] = produit[4]
+        produits.append(produit_data)
+    return jsonify(produits)
+
+@app.route('/produit', methods=['POST'])
+def create_produit():
+    description = request.json.get('description')
+    price = request.json.get('price')
+    image = request.json.get('image')
+    categorie_id = request.json.get('categorie_id')
+    cur = mysql.connection.cursor()
+    cur.execute("INSERT INTO produit (description, price, image, categorie_id) VALUES (%s, %s, %s, %s)",
+                (description, price, image, categorie_id))
+    mysql.connection.commit()
+    cur.close()
+
+    return "Produit created successfully", 201
+
+
+
+@app.route('/categorie', methods=['GET'])
+def get_categories():
+    cur = mysql.connection.cursor()
+    cur.execute('''SELECT * FROM categorie''')
+    result = cur.fetchall()
+    categories = []
+    for categorie in result:
+        categorie_data = {}
+        categorie_data['id'] = categorie[0]
+        categorie_data['libelle'] = categorie[1]
+        categories.append(categorie_data)
+    return jsonify(categories)
+
+@app.route('/promotion', methods=['GET'])
+def get_promotions():
+    cur = mysql.connection.cursor()
+    cur.execute('''SELECT * FROM promotion''')
+    result = cur.fetchall()
+    promotions = []
+    for promotion in result:
+        promotion_data = {}
+        promotion_data['id'] = promotion[0]
+        promotion_data['datedebut'] = promotion[1]
+        promotion_data['datefin'] = promotion[2]
+        promotion_data['pourcentage'] = promotion[3]
+        promotion_data['produit_id'] = promotion[4]
+        promotions.append(promotion_data)
+    return jsonify(promotions)
+
+@app.route('/promotion', methods=['POST'])
+def add_promotion():
+    if request.method == 'POST':
+        data = request.get_json()  
+
+        if 'datedebut' in data and 'datefin' in data and 'pourcentage' in data and 'produit_id' in data:
+            datedebut = data['datedebut']
+            datefin = data['datefin']
+            pourcentage = data['pourcentage']
+            produit_id = data['produit_id']
+
+            cur = mysql.connection.cursor()
+            cur.execute(
+                "INSERT INTO promotion (datedebut, datefin, pourcentage, produit_id) VALUES (%s, %s, %s, %s)",
+                (datedebut, datefin, pourcentage, produit_id)
+            )
+            mysql.connection.commit()
+            cur.close()
+            return jsonify({"message": "La promotion a été ajoutée avec succès."}), 201
+        else:
+            return jsonify({"error": "Toutes les données nécessaires ne sont pas fournies."}), 400
+
+if __name__ == '__main__':
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+    app.run(host='0.0.0.0', port=5000)
+
+
