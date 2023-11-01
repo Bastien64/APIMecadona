@@ -6,7 +6,7 @@ import base64
 import bcrypt
 from flask_cors import CORS
 from werkzeug.serving import WSGIRequestHandler
-import io  # Importez le module io
+import io  
 from PIL import Image  
 from sqlalchemy.dialects.postgresql import NUMERIC
 from sqlalchemy.dialects.postgresql import BYTEA  
@@ -15,7 +15,7 @@ WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 app = Flask(__name__)
 
-# Utilisez os.environ.get pour obtenir le port de l'environnement Heroku
+
 port = int(os.environ.get('PORT', 5000))
 
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -32,7 +32,7 @@ class Produit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Integer, nullable=False)
-    image = db.Column(BYTEA, nullable=False)  # Utilisez BYTEA pour stocker les images
+    image = db.Column(BYTEA, nullable=False) 
     categorie_id = db.Column(db.Integer, nullable=False)
 
 
@@ -87,17 +87,17 @@ def get_produits():
     produits_data = []
 
     for produit in produits:
-        # Convertir le champ "image" en une chaîne base64
+
         image_base64 = base64.b64encode(produit.image).decode('utf-8')
 
-        # Ajoutez le préfixe 'data:image/jpeg;base64,' à l'image
+
         image_base64_with_prefix = 'data:image/jpeg;base64,' + image_base64
 
         produit_data = {
             'id': produit.id,
             'description': produit.description,
-            'price': produit.price,  # Convertir le price en chaîne de caractères
-            'image': image_base64_with_prefix,  # Champ "image" avec préfixe
+            'price': produit.price, 
+            'image': image_base64_with_prefix,  
             'categorie_id': produit.categorie_id
         }
         produits_data.append(produit_data)
@@ -111,16 +111,16 @@ def get_produits():
 def create_produit():
     description = request.json.get('description')
     price = request.json.get('price')
-    image_base64 = request.json.get('image')  # Récupérez l'image en base64
-    categorie_id = request.json.get('categorie_id')  # Récupérez categorie_id
-    # Vérifiez si l'image contient déjà le préfixe 'data:image/jpeg;base64,'
+    image_base64 = request.json.get('image')  #
+    categorie_id = request.json.get('categorie_id')  
+
     if not image_base64.startswith('data:image/jpeg;base64,'):
         image_base64 = 'data:image/jpeg;base64,' + image_base64
 
-    # Supprimez le préfixe pour obtenir les données brutes en base64
+  
     image_data = image_base64.replace('data:image/jpeg;base64,', '')
 
-    # Convertissez les données base64 en bytes
+
     image_bytes = b64decode(image_data)
 
     new_produit = Produit(description=description, price=price, image=image_bytes, categorie_id=categorie_id)
@@ -182,5 +182,5 @@ def add_promotion():
         return jsonify({"error": "Toutes les données nécessaires ne sont pas fournies."}), 400
 
 if __name__ == '__main__':
-    # Utilisez le port défini par Heroku (via os.environ.get)
+
     app.run(host="0.0.0.0", port=port)
