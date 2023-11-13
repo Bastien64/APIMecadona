@@ -6,7 +6,6 @@ import base64
 
 image_directory = 'C:\\Users\\basti\\OneDrive\\Bureau\\Studi L3\\Bloc3_Mercadona\\Api'
 
-# Construisez le chemin complet du fichier image
 image_path = os.path.join(image_directory, 'image.jpg')
 
 with open(image_path, 'rb') as image_file:
